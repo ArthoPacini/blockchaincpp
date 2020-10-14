@@ -1,6 +1,8 @@
 # blockchaincpp
 Simple Blockchain written in C++
 
+just download it and run make
+
 ```cpp
 int main()
 {
