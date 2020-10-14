@@ -6,7 +6,7 @@ just download it and run make
 ```cpp
 int main()
 {
-    //Create blockchain with 3 level difficulty, max 2 transactions per block
+    //Create blockchain with difficulty level 3 and 2 transactions per block max
     Blockchain blockchain(3, 2); 
 
     //add transactions
