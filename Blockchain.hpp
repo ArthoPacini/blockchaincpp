@@ -10,7 +10,7 @@ class Blockchain
     private:
     std::uint32_t difficulty = 3;
     std::uint32_t maxTransactionsCount = 2;
-    std::vector<Block> chain = {createGenesis()};
+    std::vector<Block> chain;
     Block createGenesis()
     {
         return Block({0, sha256("Genesis"), difficulty, maxTransactionsCount,{0.0, "Genesis", "Genesis"}});
@@ -21,11 +21,7 @@ class Blockchain
     {
         this->difficulty = difficulty;
         this->maxTransactionsCount = maxTransactionsCount;
-    }
-
-    Blockchain()
-    {
-
+        chain.push_back(createGenesis());
     }
 
     void push_transaction(Transaction transaction)
