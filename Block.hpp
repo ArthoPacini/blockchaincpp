@@ -59,6 +59,7 @@ class Block
     void mine(std::uint32_t difficulty = 1)
     {
         std::cout << "Starting mining of block " << index << '\n';
+        const auto miningStartTime = std::chrono::system_clock::now();
         do
         {
             ++nounce;
@@ -68,6 +69,7 @@ class Block
             }));
 
         std::cout << "Block "<< index << " mined, nounce " << nounce << ", hash: " << blockHash << '\n'; 
+        std::cout << "Took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - miningStartTime).count() << " milliseconds to mine block\n";
     }
 
     bool validate() 
