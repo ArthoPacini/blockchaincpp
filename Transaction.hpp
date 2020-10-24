@@ -6,7 +6,8 @@
 #include <iostream>
 
 #include "sha256.hpp"
-
+#include "nlohmann/json.hpp"
+#include "timestamp_as_string.hpp"
 
 class Transaction
 {
@@ -14,7 +15,7 @@ class Transaction
     double amount;
     std::string senderKey;
     std::string receiverKey;
-    std::chrono::time_point<std::chrono::system_clock> timestamp = std::chrono::system_clock::now();
+    std::string timestamp = getTimestampAsString(std::chrono::system_clock::now());
 
     public:
     Transaction(double amount, std::string senderKey, std::string receiverKey)
@@ -24,18 +25,28 @@ class Transaction
         this->receiverKey = receiverKey;
     }
 
-    std::string getHash() const
+    Transaction(nlohmann::json transaction_json)
     {
-        return sha256(std::to_string(amount) + senderKey + receiverKey + std::to_string(timestamp.time_since_epoch().count()));
+        this->amount = transaction_json["amount"];
+        this->senderKey = transaction_json["senderKey"];
+        this->receiverKey = transaction_json["receiverKey"];
+        this->timestamp = transaction_json["timestamp"];
     }
 
-    void dump() const
+    std::string getHash() const
     {
+        return sha256(std::to_string(amount) + senderKey + receiverKey + timestamp);
+    }
+
+    void dump(nlohmann::json & output_json) const
+    {
+        output_json["transactions"].push_back( {{"amount", amount}, {"senderKey", senderKey}, {"receiverKey", receiverKey}, {"timestamp", timestamp}});
+        return;
         std::cout << "\n### Transaction:";
         std::cout << "\n\tSender: " << senderKey;
         std::cout << "\n\tReceiver: " << receiverKey;
         std::cout << "\n\tAmount: " << amount;
-        std::cout << "\n\tTimestamp: " << std::to_string(timestamp.time_since_epoch().count());
+        std::cout << "\n\tTimestamp: " << timestamp;
         std::cout << "\n\tTransaction Hash: " << getHash() << '\n';
     }
 };

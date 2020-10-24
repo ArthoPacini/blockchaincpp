@@ -8,6 +8,8 @@
 
 #include "Transaction.hpp"
 #include "sha256.hpp"
+#include "nlohmann/json.hpp"
+#include "timestamp_as_string.hpp"
 
 class Block
 {
@@ -20,6 +22,7 @@ class Block
     std::uint32_t difficulty;
     std::vector<Transaction> transactions;
     std::string transactionsHashesSum = "";
+    std::string minedAt = "not mined yet";
 
     public:
     Block(std::uint64_t index, std::string previousBlockHash, std::uint32_t difficulty, std::uint32_t maxTransactionsCount, Transaction transaction)
@@ -29,6 +32,20 @@ class Block
         this->difficulty = difficulty;
         this->maxTransactionsCount = maxTransactionsCount;
         transactions.push_back(transaction);
+    }
+
+    Block(nlohmann::json block_json)
+    {
+        this->index = block_json["index"];
+        this->blockHash = block_json["blockHash"];
+        this->previousBlockHash = block_json["previousBlockHash"];
+        this->nounce = block_json["nounce"];
+        this->maxTransactionsCount = block_json["maxTransactionCount"];
+        this->difficulty = block_json["difficulty"];
+        this->minedAt = block_json["minedAt"];
+
+        for(const auto & transaction : block_json["transactions"])
+            transactions.push_back(Transaction(transaction));
     }
 
     constexpr friend std::ostream& operator<<(std::ostream& os, const Block& block)
@@ -60,6 +77,7 @@ class Block
     {
         std::cout << "Starting mining of block " << index << '\n';
         const auto miningStartTime = std::chrono::system_clock::now();
+
         do
         {
             ++nounce;
@@ -68,6 +86,7 @@ class Block
                 return a == '0';
             }));
 
+        minedAt = getTimestampAsString(std::chrono::system_clock::now());
         std::cout << "Block "<< index << " mined, nounce " << nounce << ", hash: " << blockHash << '\n'; 
         std::cout << "Took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - miningStartTime).count() << " milliseconds to mine block\n";
     }
@@ -82,15 +101,19 @@ class Block
         return previousBlockHash;
     }
 
-    void dump() const
+    void dump(nlohmann::json & output_json) const
     {
-        std::cout << "\n\n### Start of Block " << index << ":\n";
+        nlohmann::json block_json = {{"index", index}, {"blockHash", blockHash}, {"previousBlockHash", previousBlockHash}, {"nounce", nounce}, {"maxTransactionCount", maxTransactionsCount}, {"difficulty", difficulty}, {"minedAt", minedAt}, {"transactions", nlohmann::json::array({})}};
+        std::for_each(transactions.begin(), transactions.end(), std::bind(std::mem_fn(&Transaction::dump), std::placeholders::_1, std::ref(block_json)));
+        output_json["blocks"].push_back(block_json);
+        /*std::cout << "\n\n### Start of Block " << index << ":\n";
         std::cout << "Block Nounce: " << nounce << "\n";
         std::cout << "Difficulty: " << difficulty << "\n";
         std::cout << "Block Hash: " << blockHash << "\n";
-        std::cout << "Previous Block Hash: " << previousBlockHash << "\n\n";
+        std::cout << "Previous Block Hash: " << previousBlockHash << "\n";
+        std::cout << "Mined At: " << minedAt << "\n\n";
         std::for_each(transactions.begin(), transactions.end(), std::bind(std::mem_fn(&Transaction::dump),std::placeholders::_1));
-        std::cout << "### End of Block " << index << "\n\n";
+        std::cout << "### End of Block " << index << "\n\n";*/
         return;
     }
 
