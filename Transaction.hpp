@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iostream>
 
+
 #include "sha256.hpp"
 #include "nlohmann/json.hpp"
 #include "timestamp_as_string.hpp"
@@ -41,13 +42,6 @@ class Transaction
     void dump(nlohmann::json & output_json) const
     {
         output_json["transactions"].push_back( {{"amount", amount}, {"senderKey", senderKey}, {"receiverKey", receiverKey}, {"timestamp", timestamp}});
-        return;
-        std::cout << "\n### Transaction:";
-        std::cout << "\n\tSender: " << senderKey;
-        std::cout << "\n\tReceiver: " << receiverKey;
-        std::cout << "\n\tAmount: " << amount;
-        std::cout << "\n\tTimestamp: " << timestamp;
-        std::cout << "\n\tTransaction Hash: " << getHash() << '\n';
     }
 };
 

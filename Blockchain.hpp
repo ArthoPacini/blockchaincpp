@@ -1,13 +1,20 @@
 #ifndef BLOCKCHAIN_HPP_
 #define BLOCKCHAIN_HPP_
 
+#include <iostream>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <functional>
 
 #include "Transaction.hpp"
 #include "Block.hpp"
 #include "nlohmann/json.hpp"
+#include "sha256.hpp"
 
-#include <filesystem>
-#include <fstream>
+
 
 class Blockchain
 {
@@ -74,7 +81,6 @@ class Blockchain
 
     std::string dump(std::int16_t indent = 4) const
     {
-        //std::for_each(chain.begin(), chain.end(), std::bind(std::mem_fn(&Block::dump),std::placeholders::_1));
         nlohmann::json output_json = {{"difficulty", difficulty}, {"maxTransactionsCount",maxTransactionsCount}, {"blocks", nlohmann::json::array({})}};
         std::for_each(chain.begin(), chain.end(), std::bind(std::mem_fn(&Block::dump), std::placeholders::_1, std::ref(output_json)));
         return output_json.dump(indent);
@@ -98,6 +104,8 @@ class Blockchain
 
     void load(const std::string input_filename = "blockchain.json")
     {
+        chain.clear();
+
         std::filesystem::path input_path = std::filesystem::path(std::filesystem::current_path() / "blockchain" / input_filename);
 
         if(!std::filesystem::exists(input_path))
@@ -117,7 +125,6 @@ class Blockchain
         for(const auto & block_json : input_json["blocks"])
             chain.push_back(Block(block_json));
     }
-
 };
 
 #endif
