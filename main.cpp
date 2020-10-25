@@ -4,7 +4,7 @@
 int main()
 {
     //Create blockchain with difficulty level 3 and 2 transactions per block max
-    Blockchain blockchain(5, 2); 
+    Blockchain blockchain(3, 2); 
 
     //add transactions
     //the block is mined when the transaction count reaches maximum value
