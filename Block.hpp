@@ -134,7 +134,7 @@ class Block
             }));
     }
 
-    void mine(std::uint32_t difficulty = 1, bool useMultiThreadingMining = false)
+    void mine(std::uint32_t difficulty = 1, bool useMultiThreadingMining = true)
     {
         std::cout << "Starting mining of block " << index << '\n';
         const auto miningStartTime = std::chrono::system_clock::now();
