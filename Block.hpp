@@ -8,7 +8,7 @@
 #include <functional>
 #include <chrono>
 #include <thread>
-
+#include <atomic>
 
 #include "Transaction.hpp"
 #include "sha256.hpp"
