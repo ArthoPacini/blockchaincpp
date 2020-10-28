@@ -8,13 +8,13 @@
 #include <string>
 #include <algorithm>
 #include <functional>
-#include <memory>
 
 
 #include "Transaction.hpp"
 #include "Block.hpp"
 #include "nlohmann/json.hpp"
 #include "sha256.hpp"
+
 
 
 
