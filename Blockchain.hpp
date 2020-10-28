@@ -8,6 +8,8 @@
 #include <string>
 #include <algorithm>
 #include <functional>
+#include <memory>
+
 
 #include "Transaction.hpp"
 #include "Block.hpp"
@@ -21,18 +23,21 @@ class Blockchain
     private:
     std::uint32_t difficulty = 3;
     std::uint32_t maxTransactionsCount = 2;
-    std::vector<Block> chain;
+    std::vector<Block> chain; //Here goes all the mined blocks
+    Block currentBlock; //This is the block accepting incoming transactions, not mined and not pushed to the main blockchain yet
+
     Block createGenesis()
     {
         return Block(0, sha256("Genesis"), difficulty, maxTransactionsCount,{0.0, "Genesis", "Genesis"});
     }
+
     public:
 
     Blockchain(std::uint32_t difficulty, std::uint32_t maxTransactionsCount)
     {
         this->difficulty = difficulty;
         this->maxTransactionsCount = maxTransactionsCount;
-        chain.push_back(createGenesis());
+        currentBlock = createGenesis();
     }
 
     Blockchain(const std::string filename = "blockchain.json")
@@ -42,11 +47,13 @@ class Blockchain
 
     void push_transaction(Transaction transaction)
     {
-        if(chain.back().push_transaction(transaction))    
+        if(currentBlock.push_transaction(transaction))
             return;
 
+        chain.push_back(currentBlock);
+        currentBlock = Block({chain.size(), chain.back().calculateHash(), difficulty, maxTransactionsCount, transaction});
+
         chain.back().mine(difficulty);
-        chain.push_back({chain.size(), chain.back().calculateHash(), difficulty, maxTransactionsCount, transaction});
     }
 
     bool validate() 

@@ -30,6 +30,8 @@ class Block
     bool startMining = false;
 
     public:
+    Block(){}
+
     Block(std::uint64_t index, std::string previousBlockHash, std::uint32_t difficulty, std::uint32_t maxTransactionsCount, Transaction transaction)
     {
         this->index = index;
@@ -108,10 +110,12 @@ class Block
     
     void startMultiThreadingMining(std::uint32_t difficulty = 1)
     {
+        
         std::atomic<bool> foundHash = false;
         
         //Thread Pool
-        std::size_t threadCount = std::thread::hardware_concurrency();
+        const std::size_t threadCount = std::thread::hardware_concurrency();
+        std::cout << "Mining with Multithread support, threads count: " << threadCount << std::endl;
         std::vector<std::thread> threads;
         threads.reserve(threadCount);
 
