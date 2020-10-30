@@ -41,7 +41,7 @@ class Transaction
 
     void dump(nlohmann::json & output_json) const
     {
-        output_json["transactions"].push_back( {{"amount", amount}, {"senderKey", senderKey}, {"receiverKey", receiverKey}, {"timestamp", timestamp}});
+        output_json.push_back({{"amount", amount}, {"senderKey", senderKey}, {"receiverKey", receiverKey}, {"timestamp", timestamp}});
     }
 };
 

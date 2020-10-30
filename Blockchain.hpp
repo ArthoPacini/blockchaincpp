@@ -15,7 +15,7 @@
 #include "nlohmann/json.hpp"
 #include "sha256.hpp"
 
-
+#include "httplib.hpp"
 
 
 class Blockchain
@@ -25,6 +25,9 @@ class Blockchain
     std::uint32_t maxTransactionsCount = 2;
     std::vector<Block> chain; //Here goes all the mined blocks
     Block currentBlock; //This is the block accepting incoming transactions, not mined and not pushed to the main blockchain yet
+
+    bool nodeNetworkStarted = false; //networking node
+    std::thread nodeNetworkingThread;
 
     Block createGenesis()
     {
@@ -38,6 +41,7 @@ class Blockchain
         this->difficulty = difficulty;
         this->maxTransactionsCount = maxTransactionsCount;
         currentBlock = createGenesis();
+        start_node();
     }
 
     Blockchain(const std::string filename = "blockchain.json")
@@ -51,9 +55,8 @@ class Blockchain
             return;
 
         chain.push_back(currentBlock);
-        currentBlock = Block({chain.size(), chain.back().calculateHash(), difficulty, maxTransactionsCount, transaction});
-
         chain.back().mine(difficulty);
+        currentBlock = Block({chain.size(), chain.back().calculateHash(), difficulty, maxTransactionsCount, transaction});
     }
 
     bool validate() 
@@ -89,7 +92,7 @@ class Blockchain
     std::string dump(std::int16_t indent = 4) const
     {
         nlohmann::json output_json = {{"difficulty", difficulty}, {"maxTransactionsCount",maxTransactionsCount}, {"blocks", nlohmann::json::array({})}};
-        std::for_each(chain.begin(), chain.end(), std::bind(std::mem_fn(&Block::dump), std::placeholders::_1, std::ref(output_json)));
+        std::for_each(chain.begin(), chain.end(), std::bind(std::mem_fn(&Block::dump), std::placeholders::_1, std::ref(output_json["blocks"])));
         return output_json.dump(indent);
     }
 
@@ -131,6 +134,57 @@ class Blockchain
 
         for(const auto & block_json : input_json["blocks"])
             chain.push_back(Block(block_json));
+    }
+
+    //Get block as json
+    std::string getBlockJson(std::uint64_t index) 
+    {
+        nlohmann::json blockOutput;
+
+        for(const auto & block : chain)
+            if(block.getIndex() == index)
+            {
+                //find block
+                nlohmann::json blockOutputBuffer;
+                block.dump(blockOutputBuffer);
+                blockOutput = blockOutputBuffer[0];
+                blockOutput["found"] = "true";
+                return blockOutput.dump();
+            }
+
+        blockOutput["found"] = "false";
+        return blockOutput.dump();
+    }
+    //Networking code
+    void start_node()
+    {
+        if(!nodeNetworkStarted)
+        {
+            nodeNetworkStarted = true;
+            nodeNetworkingThread = std::thread(&Blockchain::start_node, this);
+            nodeNetworkingThread.detach();
+            return;
+        }
+        
+        httplib::Server server;
+
+        //Get block
+        server.Get(R"(/block/(\d+))", [&](const httplib::Request & request, httplib::Response &response) 
+        {
+            std::string blockIndexString = request.matches[1];
+            std::uint64_t blockIndex = std::stoi(blockIndexString);
+            const std::string result = getBlockJson(blockIndex); 
+            response.set_content(result.c_str(), "application/json");
+        });
+
+        //Get entire blockchain
+        server.Get("/blockchain", [&](const httplib::Request &, httplib::Response &response) 
+        {
+            const std::string result = this->dump(-1);
+            response.set_content(result.c_str(), "application/json");
+        });
+
+        server.listen("0.0.0.0", 8080);
     }
 };
 

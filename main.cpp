@@ -3,6 +3,7 @@
 
 int main()
 {
+
     //Create blockchain with difficulty level 3 and 2 transactions per block max
     Blockchain blockchain(3, 2); 
 
@@ -25,5 +26,7 @@ int main()
     std::cout << "Is blockchain valid? " << blockchain.validate() << std::endl;
 
     //automatically load blockchain from disk
+    std::cout << "Sleeping for 1000 seconds" << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1000));
     Blockchain alternative;
 }
