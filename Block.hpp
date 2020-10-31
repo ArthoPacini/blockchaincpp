@@ -21,13 +21,14 @@ class Block
     std::uint64_t index;
     std::string blockHash;
     std::string previousBlockHash;
-    std::uint64_t nounce = 0;
+    std::uint64_t nounce = 1;
     std::uint32_t maxTransactionsCount = 3;
     std::uint32_t difficulty;
     std::vector<Transaction> transactions;
     std::string transactionsHashesSum = "";
     std::string minedAt = "not mined yet";
-    bool startMining = false;
+    //bool mined = false;
+    bool miningBlock = false;
 
     public:
     Block(){}
@@ -50,6 +51,7 @@ class Block
         this->maxTransactionsCount = block_json["maxTransactionCount"];
         this->difficulty = block_json["difficulty"];
         this->minedAt = block_json["minedAt"];
+        //this->mined = true;
 
         for(const auto & transaction : block_json["transactions"])
             transactions.push_back(Transaction(transaction));
@@ -71,9 +73,12 @@ class Block
 
     std::string calculateHash(std::uint64_t nounceInput = 0) 
     {
-        if(startMining) //this really speeds up mining...
+        if(miningBlock) //this really speeds up mining...
             return sha256(transactionsHashesSum + previousBlockHash + std::to_string(index) + std::to_string(nounceInput));
         
+        if(nounceInput == 0)
+            nounceInput = nounce;
+
         transactionsHashesSum.clear();
 
         std::for_each(transactions.begin(), transactions.end(), [&](Transaction & transaction){
@@ -138,13 +143,13 @@ class Block
             }));
     }
 
-    void mine(std::uint32_t difficulty = 1, const bool useMultiThreadingMining = true)
+    void mine(std::uint32_t difficulty = 1, const bool useMultiThreadingMining = false)
     {
         std::cout << "Starting mining of block " << index << '\n';
         const auto miningStartTime = std::chrono::system_clock::now();
 
         calculateHash(); //pre calculate transaction hashes
-        startMining = true;
+        miningBlock = true;
 
         //MultiThreadingMining
         if(useMultiThreadingMining)
@@ -153,13 +158,17 @@ class Block
             singleThreadingMining(difficulty);
 
         minedAt = getTimestampAsString(std::chrono::system_clock::now());
+        miningBlock = false;
         std::cout << "Block "<< index << " mined, nounce " << nounce << ", hash: " << blockHash << '\n'; 
         std::cout << "Took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - miningStartTime).count() << " milliseconds to mine block\n";
     }
 
     bool validate() 
     {
-        return this->blockHash == calculateHash(nounce);
+        return this->blockHash == calculateHash(nounce) && 
+        (std::all_of(blockHash.begin(), blockHash.begin() + difficulty, [](char & a){
+                return a == '0';
+            }));
     }
 
     std::string previousHash() const 
@@ -174,6 +183,10 @@ class Block
         output_json["blocks"].push_back(block_json);
     }
 
+    std::uint64_t getIndex() const
+    {
+        return index;
+    }
 };
 
 #endif
