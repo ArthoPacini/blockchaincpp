@@ -51,9 +51,8 @@ class Blockchain
             return;
 
         chain.push_back(currentBlock);
-        currentBlock = Block({chain.size(), chain.back().calculateHash(), difficulty, maxTransactionsCount, transaction});
-
         chain.back().mine(difficulty);
+        currentBlock = Block({chain.size(), chain.back().calculateHash(), difficulty, maxTransactionsCount, transaction});
     }
 
     bool validate() 
