@@ -51,13 +51,12 @@ class Block
         this->maxTransactionsCount = block_json["maxTransactionCount"];
         this->difficulty = block_json["difficulty"];
         this->minedAt = block_json["minedAt"];
-        //this->mined = true;
 
         for(const auto & transaction : block_json["transactions"])
             transactions.push_back(Transaction(transaction));
     }
 
-    constexpr friend std::ostream& operator<<(std::ostream& os, const Block& block)
+    friend std::ostream& operator<<(std::ostream& os, const Block& block)
     {
         return os << block.index;
     }
@@ -109,13 +108,12 @@ class Block
         foundHash = true;
         std::cout << "Thread " << threadId << " found block hash" << std::endl;
         nounce = threadNounce;
-        blockHash = threadHash;
+        this->blockHash = threadHash;
         
     }
     
     void startMultiThreadingMining(std::uint32_t difficulty = 1)
     {
-        
         std::atomic<bool> foundHash = false;
         
         //Thread Pool
@@ -129,25 +127,31 @@ class Block
 
         for(auto & thread : threads)
             thread.join();
+        
+            
     }
 
     void singleThreadingMining(std::uint32_t difficulty = 1)
     {
         //SingleThreadedMining
+        std::string threadHash(difficulty, '#');
+        
         do
         {
             ++nounce;
-            blockHash = calculateHash(nounce);
-        } while (!std::all_of(blockHash.begin(), blockHash.begin() + difficulty, [](char & a){
+            threadHash = calculateHash(nounce);
+        } while (!std::all_of(threadHash.begin(), threadHash.begin() + difficulty, [](char & a){
                 return a == '0';
             }));
+
+        std::cout << "Found block hash" << std::endl;
+        std::swap(blockHash, threadHash);
     }
 
     void mine(std::uint32_t difficulty = 1, const bool useMultiThreadingMining = false)
     {
         std::cout << "Starting mining of block " << index << '\n';
         const auto miningStartTime = std::chrono::system_clock::now();
-
         calculateHash(); //pre calculate transaction hashes
         miningBlock = true;
 
@@ -176,6 +180,13 @@ class Block
         return previousBlockHash;
     }
 
+    std::string dump(std::int32_t indent = -1) const
+    {
+        nlohmann::json block_json = {{"index", index}, {"blockHash", blockHash}, {"previousBlockHash", previousBlockHash}, {"nounce", nounce}, {"maxTransactionCount", maxTransactionsCount}, {"difficulty", difficulty}, {"minedAt", minedAt}, {"transactions", nlohmann::json::array({})}};
+        std::for_each(transactions.begin(), transactions.end(), std::bind(std::mem_fn(&Transaction::dump), std::placeholders::_1, std::ref(block_json["transactions"])));
+        return block_json.dump(indent);
+    }
+
     void dump(nlohmann::json & output_json) const
     {
         nlohmann::json block_json = {{"index", index}, {"blockHash", blockHash}, {"previousBlockHash", previousBlockHash}, {"nounce", nounce}, {"maxTransactionCount", maxTransactionsCount}, {"difficulty", difficulty}, {"minedAt", minedAt}, {"transactions", nlohmann::json::array({})}};
@@ -186,6 +197,11 @@ class Block
     std::uint64_t getIndex() const
     {
         return index;
+    }
+
+    void updatePreviousBlockHash(Block & block)
+    {
+        this->previousBlockHash = block.calculateHash();
     }
 };
 
